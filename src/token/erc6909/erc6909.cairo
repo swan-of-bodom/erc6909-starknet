@@ -89,7 +89,9 @@ mod ERC6909 {
         pub const TRANSFER_FROM_ZERO: felt252 = 'ERC6909: Transfer From 0';
         /// @dev Thrown when transfering to the zero address
         pub const TRANSFER_TO_ZERO: felt252 = 'ERC6909: Transfer To 0';
+        /// @dev Thrown when minting to the zero address
         pub const MINT_TO_ZERO: felt252 = 'ERC6909: Mint to 0';
+        /// @dev Thrown when burning from the zero address
         pub const BURN_FROM_ZERO: felt252 = 'ERC6909: Burn from 0';
     }
 
