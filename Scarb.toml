@@ -21,3 +21,7 @@ casm = false
 [tool.fmt]
 sort-module-level-items = true
 max-line-length = 120
+
+[tool.snforge]
+exit_first = true
+

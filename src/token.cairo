@@ -1,1 +1,1 @@
-mod erc6909;
+pub mod erc6909;
