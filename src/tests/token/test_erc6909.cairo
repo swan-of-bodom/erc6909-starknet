@@ -32,7 +32,7 @@ fn COMPONENT_STATE() -> ComponentState {
 
 fn setup() -> ComponentState {
     let mut state = COMPONENT_STATE();
-    state._mint(OWNER(), TOKEN_ID, SUPPLY);
+    state.mint(OWNER(), TOKEN_ID, SUPPLY);
     utils::drop_event(ZERO());
     state
 }
@@ -44,28 +44,28 @@ fn setup() -> ComponentState {
 #[test]
 fn test_total_supply() {
     let mut state = COMPONENT_STATE();
-    state._mint(OWNER(), TOKEN_ID, SUPPLY);
+    state.mint(OWNER(), TOKEN_ID, SUPPLY);
     assert_eq!(state.total_supply(TOKEN_ID), SUPPLY);
 }
 
 #[test]
 fn test_totalSupply() {
     let mut state = COMPONENT_STATE();
-    state._mint(OWNER(), TOKEN_ID, SUPPLY);
+    state.mint(OWNER(), TOKEN_ID, SUPPLY);
     assert_eq!(state.totalSupply(TOKEN_ID), SUPPLY);
 }
 
 #[test]
 fn test_balance_of() {
     let mut state = COMPONENT_STATE();
-    state._mint(OWNER(), TOKEN_ID, SUPPLY);
+    state.mint(OWNER(), TOKEN_ID, SUPPLY);
     assert_eq!(state.balance_of((OWNER()), TOKEN_ID), SUPPLY);
 }
 
 #[test]
 fn test_balanceOf() {
     let mut state = COMPONENT_STATE();
-    state._mint(OWNER(), TOKEN_ID, SUPPLY);
+    state.mint(OWNER(), TOKEN_ID, SUPPLY);
     assert_eq!(state.balanceOf((OWNER()), TOKEN_ID), SUPPLY);
 }
 
@@ -113,7 +113,7 @@ fn test__approve() {
     testing::set_caller_address(OWNER());
     state._approve(OWNER(), SPENDER(), TOKEN_ID, VALUE);
     assert_only_event_approval(ZERO(), OWNER(), SPENDER(), TOKEN_ID, VALUE);
-    let allowance = state.allowance(OWNER(), SPENDER(), TOKEN_ID, );
+    let allowance = state.allowance(OWNER(), SPENDER(), TOKEN_ID,);
     assert_eq!(allowance, VALUE);
 }
 
@@ -306,7 +306,6 @@ fn test_transferFrom() {
     assert_eq!(state.balance_of(OWNER(), TOKEN_ID), SUPPLY - VALUE);
     assert_eq!(state.total_supply(TOKEN_ID), SUPPLY);
     assert_eq!(allowance, 0);
-
 }
 
 #[test]
@@ -383,7 +382,7 @@ fn test__spend_allowance_unlimited() {
 #[test]
 fn test__mint() {
     let mut state = COMPONENT_STATE();
-    state._mint(OWNER(), TOKEN_ID, VALUE);
+    state.mint(OWNER(), TOKEN_ID, VALUE);
 
     assert_only_event_transfer(ZERO(), ZERO(), ZERO(), OWNER(), TOKEN_ID, VALUE);
     assert_eq!(state.balance_of(OWNER(), TOKEN_ID), VALUE);
@@ -394,7 +393,7 @@ fn test__mint() {
 #[should_panic(expected: ('ERC6909: mint to 0',))]
 fn test__mint_to_zero() {
     let mut state = COMPONENT_STATE();
-    state._mint(ZERO(), TOKEN_ID, VALUE);
+    state.mint(ZERO(), TOKEN_ID, VALUE);
 }
 
 //
@@ -404,7 +403,7 @@ fn test__mint_to_zero() {
 #[test]
 fn test__burn() {
     let mut state = setup();
-    state._burn(OWNER(), TOKEN_ID, VALUE);
+    state.burn(OWNER(), TOKEN_ID, VALUE);
 
     assert_only_event_transfer(ZERO(), ZERO(), OWNER(), ZERO(), TOKEN_ID, VALUE);
     assert_eq!(state.balance_of(OWNER(), TOKEN_ID), SUPPLY - VALUE);
@@ -415,7 +414,7 @@ fn test__burn() {
 #[should_panic(expected: ('ERC6909: burn from 0',))]
 fn test__burn_from_zero() {
     let mut state = setup();
-    state._burn(ZERO(), TOKEN_ID, VALUE);
+    state.burn(ZERO(), TOKEN_ID, VALUE);
 }
 
 
@@ -424,7 +423,9 @@ fn test__burn_from_zero() {
 //
 
 // Checks indexed keys
-fn assert_event_approval(contract: ContractAddress, owner: ContractAddress, spender: ContractAddress, id: u256, amount: u256) {
+fn assert_event_approval(
+    contract: ContractAddress, owner: ContractAddress, spender: ContractAddress, id: u256, amount: u256
+) {
     let event = utils::pop_log::<ERC6909Component::Event>(contract).unwrap();
     let expected = ERC6909Component::Event::Approval(Approval { owner, spender, id, amount });
     assert!(event == expected);
@@ -436,13 +437,22 @@ fn assert_event_approval(contract: ContractAddress, owner: ContractAddress, spen
     utils::assert_indexed_keys(event, indexed_keys.span())
 }
 
-fn assert_only_event_approval(contract: ContractAddress, owner: ContractAddress, spender: ContractAddress, id: u256, amount: u256) {
+fn assert_only_event_approval(
+    contract: ContractAddress, owner: ContractAddress, spender: ContractAddress, id: u256, amount: u256
+) {
     assert_event_approval(contract, owner, spender, id, amount);
     utils::assert_no_events_left(contract);
 }
 
 // Checks indexed keys
-fn assert_event_transfer(contract: ContractAddress, caller: ContractAddress, sender: ContractAddress, receiver: ContractAddress, id: u256, amount: u256) {
+fn assert_event_transfer(
+    contract: ContractAddress,
+    caller: ContractAddress,
+    sender: ContractAddress,
+    receiver: ContractAddress,
+    id: u256,
+    amount: u256
+) {
     let event = utils::pop_log::<ERC6909Component::Event>(contract).unwrap();
     let expected = ERC6909Component::Event::Transfer(Transfer { caller, sender, receiver, id, amount });
     assert!(event == expected);
@@ -454,7 +464,14 @@ fn assert_event_transfer(contract: ContractAddress, caller: ContractAddress, sen
     utils::assert_indexed_keys(event, indexed_keys.span());
 }
 
-fn assert_only_event_transfer( contract: ContractAddress, caller: ContractAddress, sender: ContractAddress, receiver: ContractAddress, id: u256, amount: u256) {
+fn assert_only_event_transfer(
+    contract: ContractAddress,
+    caller: ContractAddress,
+    sender: ContractAddress,
+    receiver: ContractAddress,
+    id: u256,
+    amount: u256
+) {
     assert_event_transfer(contract, caller, sender, receiver, id, amount);
     utils::assert_no_events_left(contract);
 }

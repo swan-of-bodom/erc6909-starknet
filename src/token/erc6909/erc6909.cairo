@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+use core::starknet::{ContractAddress};
 
 /// # ERC6909 Component
 ///
@@ -10,8 +11,10 @@ pub mod ERC6909Component {
     use core::integer::BoundedInt;
     use core::num::traits::Zero;
     use core::starknet::{ContractAddress, get_caller_address};
+
     // ERC6909 ABI
     use erc6909::token::erc6909::interface;
+
     // ERC165 Interface ID
     use openzeppelin::introspection::interface::ISRC5_ID;
 
@@ -100,9 +103,28 @@ pub mod ERC6909Component {
         pub const APPROVE_TO_ZERO: felt252 = 'ERC6909: approve to 0';
     }
 
+    /// Hooks
+    pub trait ERC6909HooksTrait<TContractState> {
+        fn before_update(
+            ref self: ComponentState<TContractState>,
+            from: ContractAddress,
+            recipient: ContractAddress,
+            id: u256,
+            amount: u256
+        );
+
+        fn after_update(
+            ref self: ComponentState<TContractState>,
+            from: ContractAddress,
+            recipient: ContractAddress,
+            id: u256,
+            amount: u256
+        );
+    }
+
     #[embeddable_as(ERC6909Impl)]
     impl ERC6909<
-        TContractState, +HasComponent<TContractState>,
+        TContractState, +HasComponent<TContractState>, +ERC6909HooksTrait<TContractState>
     > of interface::IERC6909<ComponentState<TContractState>> {
         /// @notice Owner balance of an id.
         /// @param owner The address of the owner.
@@ -192,7 +214,7 @@ pub mod ERC6909Component {
 
     #[embeddable_as(ERC6909CamelImpl)]
     impl ERC6909Camel<
-        TContractState, +HasComponent<TContractState>,
+        TContractState, +HasComponent<TContractState>, +ERC6909HooksTrait<TContractState>
     > of interface::IERC6909Camel<ComponentState<TContractState>> {
         /// @notice Owner balance of an id.
         /// @param owner The address of the owner.
@@ -242,7 +264,7 @@ pub mod ERC6909Component {
 
     #[embeddable_as(ERC6909MetadataImpl)]
     impl ERC6909Metadata<
-        TContractState, +HasComponent<TContractState>
+        TContractState, +HasComponent<TContractState>, +ERC6909HooksTrait<TContractState>
     > of interface::IERC6909Metadata<ComponentState<TContractState>> {
         /// @notice Name of a given token.
         /// @param id The id of the token.
@@ -268,7 +290,7 @@ pub mod ERC6909Component {
 
     #[embeddable_as(ERC6909TokenSupplyImpl)]
     impl ERC6909TokenSupply<
-        TContractState, +HasComponent<TContractState>
+        TContractState, +HasComponent<TContractState>, +ERC6909HooksTrait<TContractState>
     > of interface::IERC6909TokenSupply<ComponentState<TContractState>> {
         /// @notice Total supply of a token
         /// @param id The id of the token.
@@ -280,7 +302,7 @@ pub mod ERC6909Component {
 
     #[embeddable_as(ERC6909TokenSupplyCamelImpl)]
     impl ERC6909TokenSupplyCamel<
-        TContractState, +HasComponent<TContractState>
+        TContractState, +HasComponent<TContractState>, +ERC6909HooksTrait<TContractState>
     > of interface::IERC6909TokenSupplyCamel<ComponentState<TContractState>> {
         /// @notice Total supply of a token
         /// @param id The id of the token.
@@ -293,7 +315,7 @@ pub mod ERC6909Component {
 
     #[embeddable_as(ERC6909ContentURIImpl)]
     impl ERC6909ContentURI<
-        TContractState, +HasComponent<TContractState>
+        TContractState, +HasComponent<TContractState>, +ERC6909HooksTrait<TContractState>
     > of interface::IERC6909ContentURI<ComponentState<TContractState>> {
         /// @notice The contract level URI.
         /// @return The URI of the contract.
@@ -316,7 +338,7 @@ pub mod ERC6909Component {
 
     #[embeddable_as(ERC6909ContentURICamelImpl)]
     impl ERC6909ContentURICamel<
-        TContractState, +HasComponent<TContractState>
+        TContractState, +HasComponent<TContractState>, +ERC6909HooksTrait<TContractState>
     > of interface::IERC6909ContentURICamel<ComponentState<TContractState>> {
         /// @notice Contract level URI
         /// @return uri The contract level URI.
@@ -332,10 +354,78 @@ pub mod ERC6909Component {
         }
     }
 
-
     /// internal
     #[generate_trait]
-    pub impl InternalImpl<TContractState, +HasComponent<TContractState>> of InternalTrait<TContractState> {
+    pub impl InternalImpl<
+        TContractState, +HasComponent<TContractState>, impl Hooks: ERC6909HooksTrait<TContractState>
+    > of InternalTrait<TContractState> {
+        /// Creates a `value` amount of tokens and assigns them to `account`.
+        ///
+        /// Requirements:
+        ///
+        /// - `receiver` is not the zero address.
+        ///
+        /// Emits a `Transfer` event with `from` set to the zero address.
+        fn mint(ref self: ComponentState<TContractState>, receiver: ContractAddress, id: u256, amount: u256) {
+            assert(!receiver.is_zero(), Errors::MINT_TO_ZERO);
+            self.update(get_caller_address(), Zero::zero(), receiver, id, amount);
+        }
+
+        /// Destroys `amount` of tokens from `account`.
+        ///
+        /// Requirements:
+        ///
+        /// - `account` is not the zero address.
+        /// - `account` must have at least a balance of `amount`.
+        ///
+        /// Emits a `Transfer` event with `to` set to the zero address.
+        fn burn(ref self: ComponentState<TContractState>, account: ContractAddress, id: u256, amount: u256) {
+            assert(!account.is_zero(), Errors::BURN_FROM_ZERO);
+            self.update(get_caller_address(), account, Zero::zero(), id, amount);
+        }
+
+        /// Transfers an `amount` of tokens from `sender` to `receiver`, or alternatively mints (or burns) if `sender` (or `receiver`) is
+        /// the zero address.
+        ///
+        /// Emits a `Transfer` event.
+        fn update(
+            ref self: ComponentState<TContractState>,
+            caller: ContractAddress,
+            sender: ContractAddress, // from
+            receiver: ContractAddress, // to
+            id: u256,
+            amount: u256
+        ) {
+            Hooks::before_update(ref self, sender, receiver, id, amount);
+
+            let zero_address = Zero::zero();
+            if (sender == zero_address) {
+                let total_supply = self.ERC6909_total_supply.read(id);
+                self.ERC6909_total_supply.write(id, total_supply + amount);
+            } else {
+                let sender_balance = self.ERC6909_balances.read((sender, id));
+                assert(sender_balance >= amount, Errors::INSUFFICIENT_BALANCE);
+                self.ERC6909_balances.write((sender, id), sender_balance - amount);
+            }
+
+            if (receiver == zero_address) {
+                let total_supply = self.ERC6909_total_supply.read(id);
+                self.ERC6909_total_supply.write(id, total_supply - amount);
+            } else {
+                let receiver_balance = self.ERC6909_balances.read((receiver, id));
+                self.ERC6909_balances.write((receiver, id), receiver_balance + amount);
+            }
+
+            self.emit(Transfer { caller, sender, receiver, id, amount });
+
+            Hooks::after_update(ref self, sender, receiver, id, amount);
+        }
+
+        /// Sets the base URI.
+        fn _set_contract_uri(ref self: ComponentState<TContractState>, contract_uri: ByteArray) {
+            self.ERC6909_contract_uri.write(contract_uri);
+        }
+
         /// @notice Sets or unsets a spender as an operator for the caller.
         /// @param owner The address of the owner.
         /// @param spender The address of the spender.
@@ -357,9 +447,7 @@ pub mod ERC6909Component {
             amount: u256
         ) {
             // In accordance with the transferFrom method, spenders with operator permission are not subject to 
-            // allowance restrictions, spenders with infinite approvals SHOULD NOT have their allowance deducted 
-            // on delegated transfers, but spenders with non-infinite approvals MUST have their balance deducted 
-            // on delegated transfers. (https://eips.ethereum.org/EIPS/eip-6909)
+            // allowance restrictions (https://eips.ethereum.org/EIPS/eip-6909).
             if sender != spender && !self.ERC6909_operators.read((sender, spender)) {
                 let sender_allowance = self.ERC6909_allowances.read((sender, spender, id));
                 assert(sender_allowance >= amount, Errors::INSUFFICIENT_ALLOWANCE);
@@ -391,11 +479,6 @@ pub mod ERC6909Component {
             self.emit(Approval { owner, spender, id, amount });
         }
 
-        /// Sets the base URI.
-        fn _set_contract_uri(ref self: ComponentState<TContractState>, contract_uri: ByteArray) {
-            self.ERC6909_contract_uri.write(contract_uri);
-        }
-
         /// Internal method that moves an `amount` of tokens from `sender` to `receiver`.
         ///
         /// Requirements:
@@ -415,72 +498,13 @@ pub mod ERC6909Component {
         ) {
             assert(!sender.is_zero(), Errors::TRANSFER_FROM_ZERO);
             assert(!receiver.is_zero(), Errors::TRANSFER_TO_ZERO);
-            self._update(caller, sender, receiver, id, amount);
-        }
-
-        /// Transfers an `amount` of tokens from `sender` to `receiver`, or alternatively mints (or burns) if `sender` (or `receiver`) is
-        /// the zero address.
-        ///
-        /// Emits a `Transfer` event.
-        fn _update(
-            ref self: ComponentState<TContractState>,
-            caller: ContractAddress,
-            sender: ContractAddress, // from
-            receiver: ContractAddress, // to
-            id: u256,
-            amount: u256
-        ) {
-            let zero_address = Zero::zero();
-
-            if (sender == zero_address) {
-                let total_supply = self.ERC6909_total_supply.read(id);
-                self.ERC6909_total_supply.write(id, total_supply + amount);
-            } else {
-                let sender_balance = self.ERC6909_balances.read((sender, id));
-                assert(sender_balance >= amount, Errors::INSUFFICIENT_BALANCE);
-                self.ERC6909_balances.write((sender, id), sender_balance - amount);
-            }
-
-            if (receiver == zero_address) {
-                let total_supply = self.ERC6909_total_supply.read(id);
-                self.ERC6909_total_supply.write(id, total_supply - amount);
-            } else {
-                let receiver_balance = self.ERC6909_balances.read((receiver, id));
-                self.ERC6909_balances.write((receiver, id), receiver_balance + amount);
-            }
-
-            self.emit(Transfer { caller, sender, receiver, id, amount });
-        }
-
-        /// Creates a `value` amount of tokens and assigns them to `account`.
-        ///
-        /// Requirements:
-        ///
-        /// - `receiver` is not the zero address.
-        ///
-        /// Emits a `Transfer` event with `from` set to the zero address.
-        fn _mint(ref self: ComponentState<TContractState>, receiver: ContractAddress, id: u256, amount: u256) {
-            assert(!receiver.is_zero(), Errors::MINT_TO_ZERO);
-            self._update(get_caller_address(), Zero::zero(), receiver, id, amount);
-        }
-
-        /// Destroys `amount` of tokens from `account`.
-        ///
-        /// Requirements:
-        ///
-        /// - `account` is not the zero address.
-        /// - `account` must have at least a balance of `amount`.
-        ///
-        /// Emits a `Transfer` event with `to` set to the zero address.
-        fn _burn(ref self: ComponentState<TContractState>, account: ContractAddress, id: u256, amount: u256) {
-            assert(!account.is_zero(), Errors::BURN_FROM_ZERO);
-            self._update(get_caller_address(), account, Zero::zero(), id, amount);
+            self.update(caller, sender, receiver, id, amount);
         }
     }
 
     #[embeddable_as(ERC6909MixinImpl)]
     impl ERC6909Mixin<
-        TContractState, +HasComponent<TContractState>
+        TContractState, +HasComponent<TContractState>, +ERC6909HooksTrait<TContractState>
     > of interface::ERC6909ABI<ComponentState<TContractState>> {
         //
         // ABI
@@ -560,4 +584,23 @@ pub mod ERC6909Component {
             ERC6909::supports_interface(self, interfaceId)
         }
     }
+}
+
+/// An empty implementation of the ERC6909 hooks to be used in basic ERC6909 preset contracts.
+pub impl ERC6909HooksEmptyImpl<TContractState> of ERC6909Component::ERC6909HooksTrait<TContractState> {
+    fn before_update(
+        ref self: ERC6909Component::ComponentState<TContractState>,
+        from: ContractAddress,
+        recipient: ContractAddress,
+        id: u256,
+        amount: u256
+    ) {}
+
+    fn after_update(
+        ref self: ERC6909Component::ComponentState<TContractState>,
+        from: ContractAddress,
+        recipient: ContractAddress,
+        id: u256,
+        amount: u256
+    ) {}
 }
