@@ -1,1 +1,1 @@
-pub mod test_erc6909;
+pub(crate) mod erc6909;

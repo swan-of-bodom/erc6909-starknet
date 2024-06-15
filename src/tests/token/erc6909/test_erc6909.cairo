@@ -4,19 +4,20 @@ use core::starknet::{ContractAddress, testing};
 
 // ERC6909
 use erc6909::tests::mocks::erc6909_mocks::DualCaseERC6909Mock;
-use erc6909::token::erc6909::{
-    ERC6909Component,
-    ERC6909Component::{
-        Approval, Transfer, InternalImpl, ERC6909Impl, ERC6909CamelImpl, ERC6909TokenSupplyImpl,
-        ERC6909TokenSupplyCamelImpl
-    }
+use erc6909::token::erc6909::ERC6909Component::{
+    InternalImpl, ERC6909Impl, ERC6909CamelImpl, ERC6909TokenSupplyImpl, ERC6909TokenSupplyCamelImpl
 };
+use erc6909::token::erc6909::ERC6909Component::{Approval, Transfer, OperatorSet};
+use erc6909::token::erc6909::ERC6909Component;
+use openzeppelin::introspection::interface::ISRC5_ID;
 
 // OpenZeppelin Utils
 use openzeppelin::tests::{
-    utils, utils::constants::{ZERO, OWNER, SPENDER, RECIPIENT, NAME, SYMBOL, DECIMALS, SUPPLY, VALUE}
+    utils, utils::constants::{ZERO, OWNER, SPENDER, RECIPIENT, NAME, SYMBOL, DECIMALS, SUPPLY, VALUE, OPERATOR}
 };
 use openzeppelin::utils::serde::SerializedAppend;
+
+use super::common::{assert_event_approval, assert_only_event_approval, assert_only_event_transfer, assert_only_event_operator_set, assert_event_operator_set };
 
 //
 // Setup
@@ -205,6 +206,17 @@ fn test__transfer_to_zero() {
     state._transfer(OWNER(), OWNER(), ZERO(), TOKEN_ID, VALUE);
 }
 
+#[test]
+fn test_self_transfer() {
+    let mut state = setup();
+    testing::set_caller_address(OWNER());
+    assert_eq!(state.balance_of(OWNER(), TOKEN_ID), SUPPLY);
+    assert!(state.transfer(OWNER(), TOKEN_ID, 1));
+    assert_only_event_transfer(ZERO(), OWNER(), OWNER(), OWNER(), TOKEN_ID, 1);
+    assert_eq!(state.balance_of(OWNER(), TOKEN_ID), SUPPLY);
+}
+
+
 //
 // transfer_from & transferFrom
 //
@@ -344,6 +356,17 @@ fn test_transferFrom_to_zero_address() {
     state.transferFrom(OWNER(), ZERO(), TOKEN_ID, VALUE);
 }
 
+#[test]
+fn test_self_transfer_from() {
+    let mut state = setup();
+    testing::set_caller_address(OWNER());
+    assert_eq!(state.balance_of(OWNER(), TOKEN_ID), SUPPLY);
+    assert!(state.transfer_from(OWNER(), OWNER(), TOKEN_ID, 1));
+    assert_only_event_transfer(ZERO(), OWNER(), OWNER(), OWNER(), TOKEN_ID, 1);
+    assert_eq!(state.balance_of(OWNER(), TOKEN_ID), SUPPLY);
+}
+
+
 //
 // _spend_allowance
 //
@@ -417,61 +440,99 @@ fn test__burn_from_zero() {
     state.burn(ZERO(), TOKEN_ID, VALUE);
 }
 
+// 
+// supports_interface
+//
+#[test]
+fn test_set_supports_interface() {
+    let mut state = setup();
+    // IERC6909_ID as defined in `interface.cairo` = 0x32cb2c2fe3eafecaa713aaa072ee54795f66abbd45618bd0ff07284d97116ee
+    assert!(state.supports_interface(0x32cb2c2fe3eafecaa713aaa072ee54795f66abbd45618bd0ff07284d97116ee));
+    assert_eq!(state.supports_interface(0x32cb), false);
+    assert_eq!(state.supports_interface(0x32cb2c2fe3eafecaa713aaa072ee54795f66abbd45618bd0ff07284d97116ef), false);
+    assert!(state.supports_interface(ISRC5_ID))
+}
+
 
 //
-// Helpers
+// operators
 //
 
-// Checks indexed keys
-fn assert_event_approval(
-    contract: ContractAddress, owner: ContractAddress, spender: ContractAddress, id: u256, amount: u256
-) {
-    let event = utils::pop_log::<ERC6909Component::Event>(contract).unwrap();
-    let expected = ERC6909Component::Event::Approval(Approval { owner, spender, id, amount });
-    assert!(event == expected);
-    let mut indexed_keys = array![];
-    indexed_keys.append_serde(selector!("Approval"));
-    indexed_keys.append_serde(owner);
-    indexed_keys.append_serde(spender);
-    indexed_keys.append_serde(id);
-    utils::assert_indexed_keys(event, indexed_keys.span())
+#[test]
+fn test_transfer_from_caller_is_operator() {
+    let mut state = setup();
+    assert_eq!(state.balance_of(OWNER(), TOKEN_ID), SUPPLY);
+    assert_eq!(state.balance_of(RECIPIENT(), TOKEN_ID), 0);
+    assert_eq!(state.is_operator(OWNER(), OPERATOR()), false);
+
+    testing::set_caller_address(OWNER());
+    state.set_operator(OPERATOR(), true);
+
+    assert_only_event_operator_set(ZERO(), OWNER(), OPERATOR(), true);
+
+    testing::set_caller_address(OPERATOR());
+    assert!(state.transfer_from(OWNER(), OPERATOR(), TOKEN_ID, VALUE));
+    assert_eq!(state.balance_of(OWNER(), TOKEN_ID), SUPPLY - VALUE);
+    assert_eq!(state.balance_of(OPERATOR(), TOKEN_ID), VALUE);
+    assert!(state.is_operator(OWNER(), OPERATOR()));
 }
 
-fn assert_only_event_approval(
-    contract: ContractAddress, owner: ContractAddress, spender: ContractAddress, id: u256, amount: u256
-) {
-    assert_event_approval(contract, owner, spender, id, amount);
-    utils::assert_no_events_left(contract);
+#[test]
+fn test_set_operator() {
+    let mut state = setup();
+    assert_eq!(state.is_operator(OWNER(), OPERATOR()), false);
+
+    testing::set_caller_address(OWNER());
+    state.set_operator(OPERATOR(), true);
+
+    assert_only_event_operator_set(ZERO(), OWNER(), OPERATOR(), true);
+    assert!(state.is_operator(OWNER(), OPERATOR()));
 }
 
-// Checks indexed keys
-fn assert_event_transfer(
-    contract: ContractAddress,
-    caller: ContractAddress,
-    sender: ContractAddress,
-    receiver: ContractAddress,
-    id: u256,
-    amount: u256
-) {
-    let event = utils::pop_log::<ERC6909Component::Event>(contract).unwrap();
-    let expected = ERC6909Component::Event::Transfer(Transfer { caller, sender, receiver, id, amount });
-    assert!(event == expected);
-    let mut indexed_keys = array![];
-    indexed_keys.append_serde(selector!("Transfer"));
-    indexed_keys.append_serde(sender);
-    indexed_keys.append_serde(receiver);
-    indexed_keys.append_serde(id);
-    utils::assert_indexed_keys(event, indexed_keys.span());
+#[test]
+fn test_set_operator_false() {
+    let mut state = setup();
+    assert_eq!(state.is_operator(OWNER(), OPERATOR()), false);
+
+    testing::set_caller_address(OWNER());
+    state.set_operator(OPERATOR(), true);
+    assert_only_event_operator_set(ZERO(), OWNER(), OPERATOR(), true);
+    assert!(state.is_operator(OWNER(), OPERATOR()));
+
+    testing::set_caller_address(OWNER());
+    state.set_operator(OPERATOR(), false);
+    assert_only_event_operator_set(ZERO(), OWNER(), OPERATOR(), false);
+    assert_eq!(state.is_operator(OWNER(), OPERATOR()), false);
 }
 
-fn assert_only_event_transfer(
-    contract: ContractAddress,
-    caller: ContractAddress,
-    sender: ContractAddress,
-    receiver: ContractAddress,
-    id: u256,
-    amount: u256
-) {
-    assert_event_transfer(contract, caller, sender, receiver, id, amount);
-    utils::assert_no_events_left(contract);
+#[test]
+fn test_operator_does_not_deduct_allowance() {
+    let mut state = setup();
+
+    testing::set_caller_address(OWNER());
+    state.approve(OPERATOR(), TOKEN_ID, 1);
+    assert_eq!(state.allowance(OWNER(), OPERATOR(), TOKEN_ID), 1);
+    assert_event_approval(ZERO(), OWNER(), OPERATOR(), TOKEN_ID, 1);
+
+    testing::set_caller_address(OWNER());
+    state.set_operator(OPERATOR(), true);
+    assert!(state.is_operator(OWNER(), OPERATOR()));
+    assert_event_operator_set(ZERO(), OWNER(), OPERATOR(), true);
+
+    testing::set_caller_address(OPERATOR());
+    assert!(state.transfer_from(OWNER(), OPERATOR(), TOKEN_ID, 1));
+    assert_only_event_transfer(ZERO(), OPERATOR(), OWNER(), OPERATOR(), TOKEN_ID, 1);
+
+    assert_eq!(state.allowance(OWNER(), OPERATOR(), TOKEN_ID), 1);
+    assert_eq!(state.balance_of(OWNER(), TOKEN_ID), SUPPLY - 1);
+    assert_eq!(state.balance_of(OPERATOR(), TOKEN_ID), 1);
+}
+
+#[test]
+fn test_self_set_operator() {
+    let mut state = setup();
+    assert_eq!(state.is_operator(OWNER(), OWNER()), false);
+    testing::set_caller_address(OWNER());
+    state.set_operator(OWNER(), true);
+    assert!(state.is_operator(OWNER(), OWNER()));
 }

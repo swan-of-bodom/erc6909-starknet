@@ -1,5 +1,5 @@
 #[starknet::contract]
-pub mod DualCaseERC6909Mock {
+pub(crate) mod DualCaseERC6909Mock {
     use erc6909::token::erc6909::{ERC6909Component, ERC6909HooksEmptyImpl};
     use starknet::ContractAddress;
 
@@ -10,9 +10,11 @@ pub mod DualCaseERC6909Mock {
     #[abi(embed_v0)]
     impl ERC6909Impl = ERC6909Component::ERC6909Impl<ContractState>;
     #[abi(embed_v0)]
+    impl ERC6909CamelImpl = ERC6909Component::ERC6909CamelImpl<ContractState>;
+    #[abi(embed_v0)]
     impl ERC6909TokenSupplyImpl = ERC6909Component::ERC6909TokenSupplyImpl<ContractState>;
     #[abi(embed_v0)]
-    impl ERC6909CamelImpl = ERC6909Component::ERC6909CamelImpl<ContractState>;
+    impl ERC6909TokenSupplyCamelImpl = ERC6909Component::ERC6909TokenSupplyCamelImpl<ContractState>;
 
     /// Internal logic
     impl InternalImpl = ERC6909Component::InternalImpl<ContractState>;
@@ -35,4 +37,3 @@ pub mod DualCaseERC6909Mock {
         self.erc6909.mint(receiver, id, amount);
     }
 }
-

@@ -76,7 +76,7 @@ pub mod ERC6909Component {
     /// @param spender The address of the spender.
     /// @param approved The approval status.
     #[derive(Drop, PartialEq, starknet::Event)]
-    struct OperatorSet {
+    pub struct OperatorSet {
         #[key]
         pub owner: ContractAddress,
         #[key]

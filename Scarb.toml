@@ -2,16 +2,18 @@
 name = "erc6909"
 version = "0.1.0"
 edition = "2023_11"
-cairo-version = "2.6.3"
+cairo-version = "2.6.4"
+scarb-version = "2.6.5"
+authors = ["swan-of-bodom <0xhyoga@cygnusdao.finance>"]
+description = "ERC6909 Cairo implementation (https://eips.ethereum.org/EIPS/eip-6909)"
 readme = "README.md"
+repository = "https://github.com/swan-of-bodom/erc6909-starknet/"
 license-file = "LICENSE"
-
-# See more keys and their definitions at https://docs.swmansion.com/scarb/docs/reference/manifest.html
+keywords = ["openzeppelin", "starknet", "cairo", "contracts", "security", "standards"]
 
 [dependencies]
-snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.13.1" }
 openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.13.0" }
-starknet = "2.6.3"
+starknet = "2.6.4"
 
 [[target.starknet-contract]]
 allowed-libfuncs-list.name = "experimental"
@@ -21,7 +23,3 @@ casm = false
 [tool.fmt]
 sort-module-level-items = true
 max-line-length = 120
-
-[tool.snforge]
-exit_first = true
-
