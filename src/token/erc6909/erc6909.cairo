@@ -212,10 +212,10 @@ pub mod ERC6909Component {
         }
     }
 
-    #[embeddable_as(ERC6909CamelImpl)]
-    impl ERC6909Camel<
+    #[embeddable_as(ERC6909CamelOnlyImpl)]
+    impl ERC6909CamelOnly<
         TContractState, +HasComponent<TContractState>, +ERC6909HooksTrait<TContractState>
-    > of interface::IERC6909Camel<ComponentState<TContractState>> {
+    > of interface::IERC6909CamelOnly<ComponentState<TContractState>> {
         /// @notice Owner balance of an id.
         /// @param owner The address of the owner.
         /// @param id The id of the token.

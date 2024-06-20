@@ -1,3 +1,4 @@
+pub mod dual6909;
 pub mod erc6909;
 pub mod interface;
 

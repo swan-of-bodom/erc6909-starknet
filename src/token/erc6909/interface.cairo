@@ -67,6 +67,62 @@ pub trait IERC6909Camel<TState> {
     /// @return The balance of the token.
     fn balanceOf(self: @TState, owner: ContractAddress, id: u256) -> u256;
 
+    /// @notice Spender allowance of an id.
+    /// @param owner The address of the owner.
+    /// @param spender The address of the spender.
+    /// @param id The id of the token.
+    /// @return The allowance of the token.
+    fn allowance(self: @TState, owner: ContractAddress, spender: ContractAddress, id: u256) -> u256;
+
+    /// @notice Checks if a spender is approved by an owner as an operator
+    /// @param owner The address of the owner.
+    /// @param spender The address of the spender.
+    /// @return The approval status.
+    fn isOperator(self: @TState, owner: ContractAddress, spender: ContractAddress) -> bool;
+
+    /// @notice Transfers an amount of an id from the caller to a receiver.
+    /// @param receiver The address of the receiver.
+    /// @param id The id of the token.
+    /// @param amount The amount of the token.
+    fn transfer(ref self: TState, receiver: ContractAddress, id: u256, amount: u256) -> bool;
+
+    /// @notice Transfers an amount of an id from a sender to a receiver.
+    /// @param sender The address of the sender.
+    /// @param receiver The address of the receiver.
+    /// @param id The id of the token.
+    /// @param amount The amount of the token.
+    fn transferFrom(
+        ref self: TState, sender: ContractAddress, receiver: ContractAddress, id: u256, amount: u256
+    ) -> bool;
+
+    /// @notice Approves an amount of an id to a spender.
+    /// @param spender The address of the spender.
+    /// @param id The id of the token.
+    /// @param amount The amount of the token.
+    fn approve(ref self: TState, spender: ContractAddress, id: u256, amount: u256) -> bool;
+
+    /// @notice Sets or removes a spender as an operator for the caller.
+    /// @param spender The address of the spender.
+    /// @param approved The approval status.
+    fn setOperator(ref self: TState, spender: ContractAddress, approved: bool) -> bool;
+
+    // https://github.com/jtriley-eth/ERC-6909/blob/main/src/interfaces/IERC165.sol
+    /// @notice Checks if a contract implements an interface.
+    /// @param interfaceId The interface identifier, as specified in ERC-165.
+    /// @return True if the contract implements `interfaceId` and
+    /// `interfaceId` is not 0xffffffff, false otherwise.
+    fn supportsInterface(self: @TState, interface_id: felt252) -> bool;
+}
+
+
+#[starknet::interface]
+pub trait IERC6909CamelOnly<TState> {
+    /// @notice Owner balance of an id.
+    /// @param owner The address of the owner.
+    /// @param id The id of the token.
+    /// @return The balance of the token.
+    fn balanceOf(self: @TState, owner: ContractAddress, id: u256) -> u256;
+
     /// @notice Checks if a spender is approved by an owner as an operator
     /// @param owner The address of the owner.
     /// @param spender The address of the spender.

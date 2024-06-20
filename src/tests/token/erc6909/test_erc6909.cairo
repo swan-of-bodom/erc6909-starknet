@@ -5,19 +5,18 @@ use core::starknet::{ContractAddress, testing};
 // ERC6909
 use erc6909::tests::mocks::erc6909_mocks::DualCaseERC6909Mock;
 use erc6909::token::erc6909::ERC6909Component::{
-    InternalImpl, ERC6909Impl, ERC6909CamelImpl, ERC6909TokenSupplyImpl, ERC6909TokenSupplyCamelImpl
+    InternalImpl, ERC6909Impl, ERC6909CamelOnlyImpl, ERC6909TokenSupplyImpl, ERC6909TokenSupplyCamelImpl
 };
 use erc6909::token::erc6909::ERC6909Component::{Approval, Transfer, OperatorSet};
 use erc6909::token::erc6909::ERC6909Component;
 use openzeppelin::introspection::interface::ISRC5_ID;
+use openzeppelin::tests::utils::constants::{ZERO, OWNER, SPENDER, RECIPIENT, SUPPLY, VALUE, OPERATOR};
+use openzeppelin::tests::utils;
 
-// OpenZeppelin Utils
-use openzeppelin::tests::{
-    utils, utils::constants::{ZERO, OWNER, SPENDER, RECIPIENT, NAME, SYMBOL, DECIMALS, SUPPLY, VALUE, OPERATOR}
+use super::common::{
+    assert_event_approval, assert_only_event_approval, assert_only_event_transfer, assert_only_event_operator_set,
+    assert_event_operator_set
 };
-use openzeppelin::utils::serde::SerializedAppend;
-
-use super::common::{assert_event_approval, assert_only_event_approval, assert_only_event_transfer, assert_only_event_operator_set, assert_event_operator_set };
 
 //
 // Setup
@@ -455,7 +454,7 @@ fn test_set_supports_interface() {
 
 
 //
-// operators
+// is_operator & set_operator
 //
 
 #[test]
