@@ -39,6 +39,7 @@ pub(crate) mod DualCaseERC6909Mock {
     #[constructor]
     fn constructor(ref self: ContractState, receiver: ContractAddress, id: u256, amount: u256) {
         self.erc6909.mint(receiver, id, amount);
+        self.erc6909._set_contract_uri("URI");
     }
 }
 

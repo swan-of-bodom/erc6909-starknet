@@ -22,6 +22,7 @@ pub mod ERC6909Component {
     struct Storage {
         ERC6909_name: LegacyMap<u256, ByteArray>,
         ERC6909_symbol: LegacyMap<u256, ByteArray>,
+        ERC6909_decimals: LegacyMap<u256, u8>,
         ERC6909_balances: LegacyMap<(ContractAddress, u256), u256>,
         ERC6909_allowances: LegacyMap<(ContractAddress, ContractAddress, u256), u256>,
         ERC6909_operators: LegacyMap<(ContractAddress, ContractAddress), bool>,
@@ -284,7 +285,7 @@ pub mod ERC6909Component {
         /// @param id The id of the token.
         /// @return The decimals of the token.
         fn decimals(self: @ComponentState<TContractState>, id: u256) -> u8 {
-            18
+            self.ERC6909_decimals.read(id)
         }
     }
 
