@@ -14,38 +14,52 @@ pub struct DualCaseERC6909 {
 
 pub trait DualCaseERC6909Trait {
     fn balance_of(self: @DualCaseERC6909, owner: ContractAddress, id: u256) -> u256;
-    fn allowance(self: @DualCaseERC6909, owner: ContractAddress, spender: ContractAddress, id: u256) -> u256;
-    fn is_operator(self: @DualCaseERC6909, owner: ContractAddress, spender: ContractAddress) -> bool;
+    fn allowance(
+        self: @DualCaseERC6909, owner: ContractAddress, spender: ContractAddress, id: u256
+    ) -> u256;
+    fn is_operator(
+        self: @DualCaseERC6909, owner: ContractAddress, spender: ContractAddress
+    ) -> bool;
     fn transfer(self: @DualCaseERC6909, receiver: ContractAddress, id: u256, amount: u256) -> bool;
     fn transfer_from(
-        self: @DualCaseERC6909, sender: ContractAddress, receiver: ContractAddress, id: u256, amount: u256
+        self: @DualCaseERC6909,
+        sender: ContractAddress,
+        receiver: ContractAddress,
+        id: u256,
+        amount: u256
     ) -> bool;
     fn approve(self: @DualCaseERC6909, spender: ContractAddress, id: u256, amount: u256) -> bool;
     fn set_operator(self: @DualCaseERC6909, spender: ContractAddress, approved: bool) -> bool;
     fn supports_interface(self: @DualCaseERC6909, interface_id: felt252) -> bool;
 }
 
-// TODO - add selectors to OpenZeppelin
 impl DualCaseERC6909Impl of DualCaseERC6909Trait {
     fn balance_of(self: @DualCaseERC6909, owner: ContractAddress, id: u256) -> u256 {
         let mut args = array![];
         args.append_serde(owner);
         args.append_serde(id);
 
-        try_selector_with_fallback(*self.contract_address, selectors::balance_of, selectors::balanceOf, args.span())
+        try_selector_with_fallback(
+            *self.contract_address, selectors::balance_of, selectors::balanceOf, args.span()
+        )
             .unwrap_and_cast()
     }
 
-    fn allowance(self: @DualCaseERC6909, owner: ContractAddress, spender: ContractAddress, id: u256) -> u256 {
+    fn allowance(
+        self: @DualCaseERC6909, owner: ContractAddress, spender: ContractAddress, id: u256
+    ) -> u256 {
         let mut args = array![];
         args.append_serde(owner);
         args.append_serde(spender);
         args.append_serde(id);
 
-        call_contract_syscall(*self.contract_address, selectors::allowance, args.span()).unwrap_and_cast()
+        call_contract_syscall(*self.contract_address, selectors::allowance, args.span())
+            .unwrap_and_cast()
     }
 
-    fn is_operator(self: @DualCaseERC6909, owner: ContractAddress, spender: ContractAddress) -> bool {
+    fn is_operator(
+        self: @DualCaseERC6909, owner: ContractAddress, spender: ContractAddress
+    ) -> bool {
         let mut args = array![];
         args.append_serde(owner);
         args.append_serde(spender);
@@ -53,7 +67,8 @@ impl DualCaseERC6909Impl of DualCaseERC6909Trait {
         let is_operator: felt252 = selector!("is_operator");
         let isOperator: felt252 = selector!("isOperator");
 
-        try_selector_with_fallback(*self.contract_address, is_operator, isOperator, args.span()).unwrap_and_cast()
+        try_selector_with_fallback(*self.contract_address, is_operator, isOperator, args.span())
+            .unwrap_and_cast()
     }
 
     fn transfer(self: @DualCaseERC6909, receiver: ContractAddress, id: u256, amount: u256) -> bool {
@@ -62,11 +77,16 @@ impl DualCaseERC6909Impl of DualCaseERC6909Trait {
         args.append_serde(id);
         args.append_serde(amount);
 
-        call_contract_syscall(*self.contract_address, selectors::transfer, args.span()).unwrap_and_cast()
+        call_contract_syscall(*self.contract_address, selectors::transfer, args.span())
+            .unwrap_and_cast()
     }
 
     fn transfer_from(
-        self: @DualCaseERC6909, sender: ContractAddress, receiver: ContractAddress, id: u256, amount: u256
+        self: @DualCaseERC6909,
+        sender: ContractAddress,
+        receiver: ContractAddress,
+        id: u256,
+        amount: u256
     ) -> bool {
         let mut args = array![];
         args.append_serde(sender);
@@ -86,7 +106,8 @@ impl DualCaseERC6909Impl of DualCaseERC6909Trait {
         args.append_serde(id);
         args.append_serde(amount);
 
-        call_contract_syscall(*self.contract_address, selectors::approve, args.span()).unwrap_and_cast()
+        call_contract_syscall(*self.contract_address, selectors::approve, args.span())
+            .unwrap_and_cast()
     }
 
     fn set_operator(self: @DualCaseERC6909, spender: ContractAddress, approved: bool) -> bool {
@@ -97,17 +118,20 @@ impl DualCaseERC6909Impl of DualCaseERC6909Trait {
         let set_operator: felt252 = selector!("set_operator");
         let setOperator: felt252 = selector!("setOperator");
 
-        try_selector_with_fallback(*self.contract_address, set_operator, setOperator, args.span()).unwrap_and_cast()
+        try_selector_with_fallback(*self.contract_address, set_operator, setOperator, args.span())
+            .unwrap_and_cast()
     }
 
     fn supports_interface(self: @DualCaseERC6909, interface_id: felt252) -> bool {
         let mut args = array![];
         args.append_serde(interface_id);
 
-        let supports_interface: felt252 = selector!("supports_interface");
+        let supports_interface: felt252 = selectors::supports_interface;
         let supportsInterface: felt252 = selector!("supportsInterface");
 
-        try_selector_with_fallback(*self.contract_address, supports_interface, supportsInterface, args.span())
+        try_selector_with_fallback(
+            *self.contract_address, supports_interface, supportsInterface, args.span()
+        )
             .unwrap_and_cast()
     }
 }
