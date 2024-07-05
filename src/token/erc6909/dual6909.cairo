@@ -126,7 +126,7 @@ impl DualCaseERC6909Impl of DualCaseERC6909Trait {
         let mut args = array![];
         args.append_serde(interface_id);
 
-        let supports_interface: felt252 = selectors::supports_interface;
+        let supports_interface: felt252 = selector!("supports_interface");
         let supportsInterface: felt252 = selector!("supportsInterface");
 
         try_selector_with_fallback(

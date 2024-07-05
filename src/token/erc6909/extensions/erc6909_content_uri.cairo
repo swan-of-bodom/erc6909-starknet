@@ -5,7 +5,7 @@ use starknet::ContractAddress;
 
 /// # ERC6909ContentURI Component
 ///
-/// The ERC6909Content component allows to set the contract and token ID URIs.
+/// The ERC6909ContentURI component allows to set the contract and token ID URIs.
 #[starknet::component]
 pub mod ERC6909ContentURIComponent {
     use erc6909::token::erc6909::ERC6909Component;
@@ -35,7 +35,7 @@ pub mod ERC6909ContentURIComponent {
         /// @return The token level URI.
         fn token_uri(self: @ComponentState<TContractState>, id: u256) -> ByteArray {
             let contract_uri = self.contract_uri();
-            if contract_uri.len() != 0 {
+            if contract_uri.len() == 0 {
                 return "";
             } else {
                 return format!("{}{}", contract_uri, id);
@@ -52,7 +52,7 @@ pub mod ERC6909ContentURIComponent {
         +Drop<TContractState>
     > of InternalTrait<TContractState> {
         /// Sets the base URI.
-        fn _set_contract_uri(ref self: ComponentState<TContractState>, contract_uri: ByteArray) {
+        fn initializer(ref self: ComponentState<TContractState>, contract_uri: ByteArray) {
             self.ERC6909ContentURI_contract_uri.write(contract_uri);
         }
     }
