@@ -1,17 +1,13 @@
-// Starknet lib
 use erc6909::tests::mocks::erc6909_mocks::{CamelERC6909Mock, SnakeERC6909Mock};
 use erc6909::tests::mocks::erc6909_mocks::{CamelERC6909Panic, SnakeERC6909Panic};
 use erc6909::tests::mocks::non_implementing_mock::NonImplementingMock;
+use erc6909::tests::utils::constants::{OWNER, RECIPIENT, SPENDER, OPERATOR, NAME, SYMBOL, DECIMALS, SUPPLY, VALUE};
+use erc6909::tests::utils;
 use erc6909::token::erc6909::dual6909::{DualCaseERC6909, DualCaseERC6909Trait};
 use erc6909::token::erc6909::interface::{IERC6909CamelDispatcher, IERC6909CamelDispatcherTrait};
 use erc6909::token::erc6909::interface::{IERC6909Dispatcher, IERC6909DispatcherTrait};
-use openzeppelin::tests::utils::constants::{OWNER, RECIPIENT, SPENDER, OPERATOR, NAME, SYMBOL, DECIMALS, SUPPLY, VALUE};
-use openzeppelin::tests::utils;
 use openzeppelin::utils::serde::SerializedAppend;
 use starknet::testing::set_contract_address;
-
-// TODO: TotalSupply, MetaData, ContentURI
-// TODO: Operator
 
 //
 // Setup
@@ -81,22 +77,22 @@ fn test_dual_transfer_exists_and_panics() {
 }
 
 
- #[test]
- fn test_dual_approve() {
-     let (snake_dispatcher, snake_target) = setup_snake();
-     set_contract_address(OWNER());
-     assert!(snake_dispatcher.approve(SPENDER(), TOKEN_ID, VALUE));
- 
-     let snake_allowance = snake_target.allowance(OWNER(), SPENDER(), TOKEN_ID);
-     assert_eq!(snake_allowance, VALUE);
- 
-     let (camel_dispatcher, camel_target) = setup_camel();
-     set_contract_address(OWNER());
-     assert!(camel_dispatcher.approve(SPENDER(), TOKEN_ID, VALUE));
- 
-     let camel_allowance = camel_target.allowance(OWNER(), SPENDER(), TOKEN_ID);
-     assert_eq!(camel_allowance, VALUE);
- }
+#[test]
+fn test_dual_approve() {
+    let (snake_dispatcher, snake_target) = setup_snake();
+    set_contract_address(OWNER());
+    assert!(snake_dispatcher.approve(SPENDER(), TOKEN_ID, VALUE));
+
+    let snake_allowance = snake_target.allowance(OWNER(), SPENDER(), TOKEN_ID);
+    assert_eq!(snake_allowance, VALUE);
+
+    let (camel_dispatcher, camel_target) = setup_camel();
+    set_contract_address(OWNER());
+    assert!(camel_dispatcher.approve(SPENDER(), TOKEN_ID, VALUE));
+
+    let camel_allowance = camel_target.allowance(OWNER(), SPENDER(), TOKEN_ID);
+    assert_eq!(camel_allowance, VALUE);
+}
 
 #[test]
 #[should_panic(expected: ('ENTRYPOINT_NOT_FOUND',))]

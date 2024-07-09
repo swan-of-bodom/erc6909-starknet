@@ -1,6 +1,6 @@
+use erc6909::tests::utils;
 use erc6909::token::erc6909::ERC6909Component::{Approval, Transfer, OperatorSet, InternalImpl};
 use erc6909::token::erc6909::ERC6909Component;
-use openzeppelin::tests::utils;
 use openzeppelin::utils::serde::SerializedAppend;
 use starknet::ContractAddress;
 
