@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 pub mod erc6909_content_uri;
 pub mod erc6909_metadata;
 pub mod erc6909_token_supply;

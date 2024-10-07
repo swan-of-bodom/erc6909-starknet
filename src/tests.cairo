@@ -1,6 +1,6 @@
-#[cfg(test)]
-pub mod mocks;
-#[cfg(test)]
-pub mod token;
+pub(crate) mod common;
 
-pub mod utils;
+mod test_erc6909;
+mod test_erc6909_content_uri;
+mod test_erc6909_metadata;
+mod test_erc6909_token_supply;
